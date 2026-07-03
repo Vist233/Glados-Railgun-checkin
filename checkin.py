@@ -98,6 +98,7 @@ class Config:
     ENV_COOKIES = "GLADOS_COOKIES"
     ENV_EXCHANGE_PLAN = "GLADOS_EXCHANGE_PLAN"
     ENV_VERBOSE = "GLADOS_VERBOSE"
+    ENV_DOMAINS = "GLADOS_DOMAINS"
 
     """默认兑换计划"""
     DEFAULT_EXCHANGE_PLAN = "plan500"
@@ -106,7 +107,7 @@ class Config:
     DEFAULT_VERBOSE = False
 
     """默认域名"""
-    DOMAINS = ["glados.cloud", "railgun.info"]
+    DEFAULT_DOMAINS = ["glados.cloud", "railgun.info"]
 
     """兑换计划列表"""
     EXCHANGE_PLANS = {
@@ -120,6 +121,7 @@ class Config:
         self.cookies_list: List[str] = []
         self.exchange_plan: str = self.DEFAULT_EXCHANGE_PLAN
         self.verbose: bool = self.DEFAULT_VERBOSE
+        self.domains: List[str] = self.DEFAULT_DOMAINS.copy()
         self._load_config()
 
     def _load_config(self) -> None:
@@ -128,6 +130,7 @@ class Config:
         raw_cookies_env: Optional[str] = os.environ.get(self.ENV_COOKIES)
         exchange_plan_env: Optional[str] = os.environ.get(self.ENV_EXCHANGE_PLAN)
         verbose_env: Optional[str] = os.environ.get(self.ENV_VERBOSE)
+        domains_env: Optional[str] = os.environ.get(self.ENV_DOMAINS)
 
         if not push_key_env:
             logger.warning(f"{LogEmoji.WARNING} 环境变量 '{self.ENV_PUSH_KEY}' 未设置。")
@@ -167,7 +170,17 @@ class Config:
             else:
                 logger.warning(f"{LogEmoji.WARNING} 环境变量 '{self.ENV_VERBOSE}' 的值 '{verbose_env}' 无效，将使用默认值 {self.DEFAULT_VERBOSE}。")
 
+        if domains_env:
+            parsed_domains = [domain.strip() for domain in domains_env.split(",") if domain.strip()]
+            if parsed_domains:
+                self.domains = parsed_domains
+            else:
+                logger.warning(
+                    f"{LogEmoji.WARNING} 环境变量 '{self.ENV_DOMAINS}' 已设置，但未解析出有效域名，将使用默认域名列表。"
+                )
+
         logger.info(f"{LogEmoji.INFO} 当前 {self.ENV_VERBOSE}: {self.verbose}。")
+        logger.info(f"{LogEmoji.INFO} 当前 {self.ENV_DOMAINS}: {', '.join(self.domains)}。")
 
 
 class API:
@@ -428,7 +441,7 @@ class Checker:
     def checkin_all(self):
         """执行所有签到任务"""
         cookie_count = len(self.config.cookies_list)
-        domain_count = len(self.config.DOMAINS)
+        domain_count = len(self.config.domains)
         total_tasks = cookie_count * domain_count
         task_idx = 0
 
@@ -437,7 +450,7 @@ class Checker:
         for cookie_idx, cookie in enumerate(self.config.cookies_list, 1):
             logger.info(f"{LogEmoji.START} ========== 开始处理 Cookie {cookie_idx} ==========")
 
-            for domain in self.config.DOMAINS:
+            for domain in self.config.domains:
                 task_idx += 1
                 logger.info(f"{LogEmoji.INFO} ----- 任务 {task_idx}/{total_tasks}: {LogEmoji.COOKIE}[{cookie_idx}] on {LogEmoji.DOMAIN}[{domain}] -----")
 
