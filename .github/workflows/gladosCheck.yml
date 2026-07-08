@@ -36,6 +36,12 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Repair runner DNS
+      run: |
+        sudo rm -f /etc/resolv.conf
+        printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\noptions timeout:2 attempts:2\n' | sudo tee /etc/resolv.conf
+        cat /etc/resolv.conf
+
     - name: Resolve GLaDOS domains via DoH
       env:
         GLADOS_DOMAINS: ${{ secrets.GLADOS_DOMAINS }}
@@ -43,6 +49,7 @@ jobs:
         python - <<'PY'
         import json
         import os
+        import socket
         import subprocess
         import sys
         import urllib.parse
@@ -54,6 +61,19 @@ jobs:
             "https://dns.google/resolve?name={domain}&type=A",
             "https://cloudflare-dns.com/dns-query?name={domain}&type=A",
         ]
+        fallback_ips = {
+            "glados.cloud": ["104.21.90.139", "172.67.200.254"],
+            "glados.space": ["104.21.63.33", "172.67.169.110"],
+            "railgun.info": ["104.21.39.178", "172.67.171.40"],
+        }
+
+        def resolve_from_system(domain: str):
+            try:
+                infos = socket.getaddrinfo(domain, 443, type=socket.SOCK_STREAM)
+                return sorted({info[4][0] for info in infos if info[4]})
+            except Exception as exc:
+                print(f"System lookup failed for {domain}: {exc}", file=sys.stderr)
+                return []
 
         def resolve_from_doh(domain: str):
             for template in resolvers:
@@ -75,12 +95,19 @@ jobs:
 
         host_lines = []
         for domain in domains:
-            ips = resolve_from_doh(domain)
+            ips = resolve_from_system(domain)
+            source = "system"
+            if not ips:
+                ips = resolve_from_doh(domain)
+                source = "doh"
+            if not ips:
+                ips = fallback_ips.get(domain, [])
+                source = "fallback"
             if not ips:
                 print(f"Failed to resolve {domain} via all DoH resolvers", file=sys.stderr)
                 sys.exit(1)
             ip = ips[0]
-            print(f"Resolved {domain} -> {ip}")
+            print(f"Resolved {domain} via {source} -> {ip}")
             host_lines.append(f"{ip} {domain}")
 
         hosts_payload = "\n".join(host_lines) + "\n"
