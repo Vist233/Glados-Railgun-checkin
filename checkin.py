@@ -225,7 +225,10 @@ class API:
         """获取请求头"""
         return {
             "origin": f"https://{self.domain}",
+            "referer": f"https://{self.domain}/console/checkin",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
+            "accept": "application/json, text/plain, */*",
+            "content-type": "application/json;charset=UTF-8",
         }
 
     def _log(self, level: str, emoji: str, message: str, force: bool = False) -> None:
@@ -252,7 +255,7 @@ class API:
 
         try:
             if method.upper() == "POST":
-                response = self.session.post(url, headers=session_headers, data=json.dumps(data), timeout=(60, 120))
+                response = self.session.post(url, headers=session_headers, json=data, timeout=(60, 120))
             elif method.upper() == "GET":
                 response = self.session.get(url, headers=session_headers, timeout=(60, 120))
             else:
@@ -269,7 +272,9 @@ class API:
 
     def _get_checkin_data(self) -> Dict[str, str]:
         """获取签到数据"""
-        return {"token": self.domain}
+        # This is the token sent by the current GLaDOS check-in page; it is not
+        # the hostname serving the API.
+        return {"token": "glados.network"}
 
     @log_method
     def checkin(self, cookies: str) -> Dict[str, Union[str, CheckinStatus]]:
