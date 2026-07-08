@@ -44,7 +44,7 @@ jobs:
 
     - name: Resolve GLaDOS domains via DoH
       env:
-        GLADOS_DOMAINS: glados.cloud
+        GLADOS_DOMAINS: glados.cloud,glados.space,glados.rocks
       run: |
         python - <<'PY'
         import json
@@ -63,7 +63,8 @@ jobs:
         ]
         fallback_ips = {
             "glados.cloud": ["104.21.90.139", "172.67.200.254"],
-            "glados.space": ["104.21.63.33", "172.67.169.110"],
+          "glados.space": ["104.21.63.33", "172.67.169.110"],
+          "glados.rocks": ["54.238.39.37", "54.168.191.105", "13.159.252.86"],
             "railgun.info": ["104.21.39.178", "172.67.171.40"],
         }
 
@@ -135,7 +136,7 @@ jobs:
         GLADOS_COOKIES: ${{ secrets.GLADOS_COOKIES }}
         GLADOS_EXCHANGE_PLAN: ${{ secrets.GLADOS_EXCHANGE_PLAN }}
         GLADOS_VERBOSE: ${{ secrets.GLADOS_VERBOSE }}
-        GLADOS_DOMAINS: glados.cloud
+        GLADOS_DOMAINS: glados.cloud,glados.space,glados.rocks
 
     - name: Keep alive
       uses: liskin/gh-workflow-keepalive@v1 
