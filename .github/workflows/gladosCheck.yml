@@ -44,7 +44,7 @@ jobs:
 
     - name: Resolve GLaDOS domains via DoH
       env:
-        GLADOS_DOMAINS: ${{ secrets.GLADOS_DOMAINS }}
+        GLADOS_DOMAINS: glados.cloud
       run: |
         python - <<'PY'
         import json
@@ -135,7 +135,7 @@ jobs:
         GLADOS_COOKIES: ${{ secrets.GLADOS_COOKIES }}
         GLADOS_EXCHANGE_PLAN: ${{ secrets.GLADOS_EXCHANGE_PLAN }}
         GLADOS_VERBOSE: ${{ secrets.GLADOS_VERBOSE }}
-        GLADOS_DOMAINS: ${{ secrets.GLADOS_DOMAINS }}
+        GLADOS_DOMAINS: glados.cloud
 
     - name: Keep alive
       uses: liskin/gh-workflow-keepalive@v1 
