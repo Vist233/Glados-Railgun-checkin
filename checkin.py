@@ -272,9 +272,7 @@ class API:
 
     def _get_checkin_data(self) -> Dict[str, str]:
         """获取签到数据"""
-        # This is the token sent by the current GLaDOS check-in page; it is not
-        # the hostname serving the API.
-        return {"token": "glados.network"}
+        return {"token": "glados.cloud"}
 
     @log_method
     def checkin(self, cookies: str) -> Dict[str, Union[str, CheckinStatus]]:

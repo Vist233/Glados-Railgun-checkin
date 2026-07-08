@@ -44,7 +44,7 @@ jobs:
 
     - name: Resolve GLaDOS domains via DoH
       env:
-        GLADOS_DOMAINS: glados.cloud,glados.space,glados.rocks
+        GLADOS_DOMAINS: glados.cloud
       run: |
         python - <<'PY'
         import json
@@ -127,6 +127,25 @@ jobs:
         pip install requests
         pip install pypushdeer
 
+    - name: Connect Cloudflare WARP
+      run: |
+        curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
+        echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+        sudo apt-get update
+        sudo apt-get install -y cloudflare-warp
+        warp-cli --accept-tos registration new
+        warp-cli --accept-tos mode warp+doh
+        warp-cli --accept-tos connect
+        for attempt in {1..15}; do
+          if curl -fsS https://www.cloudflare.com/cdn-cgi/trace | grep -q '^warp=on$'; then
+            echo "Cloudflare WARP is connected"
+            exit 0
+          fi
+          sleep 2
+        done
+        warp-cli status
+        exit 1
+
     # 执行 签到脚本
     - name: Running checkin
       run: |
@@ -136,7 +155,11 @@ jobs:
         GLADOS_COOKIES: ${{ secrets.GLADOS_COOKIES }}
         GLADOS_EXCHANGE_PLAN: ${{ secrets.GLADOS_EXCHANGE_PLAN }}
         GLADOS_VERBOSE: ${{ secrets.GLADOS_VERBOSE }}
-        GLADOS_DOMAINS: glados.cloud,glados.space,glados.rocks
+        GLADOS_DOMAINS: glados.cloud
+
+    - name: Disconnect Cloudflare WARP
+      if: always()
+      run: warp-cli --accept-tos disconnect || true
 
     - name: Keep alive
       uses: liskin/gh-workflow-keepalive@v1 
